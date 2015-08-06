@@ -1,0 +1,77 @@
+#+OPTIONS: toc:nil
+
+* an html template engine?
+This is something equivalent to /Racket Xexpr/.
+
+Here is what we do in Racket
+#+BEGIN_SRC scheme
+  (require xml)
+
+  ;; a list of pairs
+  ;; Symbol '`' turns next thing into value. Here `(...) is a list literal.
+  (define data
+    `((1 . "hello")
+      (2 . "world")))
+
+  (define make-ul
+    (lambda (data)
+      `(ul ((id "ul1")
+            (style "color: blue;")
+            ;; This list does not start with a tag. This syntax is
+            ;; dedicated to xml properties.
+            )
+           ;; Symbol ',' turns next thing back to code.
+           ;; While symbol ',@' expects the code evaluate to a list and
+           ;; 'splicing' it.
+           ,@(map (lambda (item)
+                    `(li ,(format "~a ~a" (car item) (cdr item))))
+                  data))))
+           ;; where the map result '((li ...) (li ...))' will be turn to
+           ;; '(li ...) (li ...)'
+  (make-ul data)
+
+  (xexpr->string (make-ul data))
+  ;; Then write to .html file or send as a http response.
+#+END_SRC
+
+And in JS, that could be
+#+BEGIN_SRC js
+var data = [{
+    id: 1,
+    info: 'hello'
+}, {
+    id: 2,
+    info: 'world'
+}];
+
+var make_ul = function(data) {
+    return [
+        'ul', {
+            id: 'ul1',
+            style: 'color: red;'
+        }, data.map(function(x) {
+            return ['li', '' + x.id + ' ' + x.info];
+        })
+        // jexpr.to_dom_node will do splicing for us
+    ];
+};
+
+// settings arg prevent_scipt = true
+var jexpr = mk_jexpr(true);
+var node = jexpr.to_dom_node(make_ul(data))[0];
+document.getElementsByTagName('body')[0].appendChild(node);
+#+END_SRC
+that is, add some quotation marks and commas.
+
+In summary
+- =jexpr.to_dom_node()= convert a jexpr to an array of DOM nodes
+- a jexpr could be
+  - an array =a=, where =a[0]= is the string of a html tag. remaining
+    array elements could be
+    - an ={...}=, which specifies the property of the tag
+    - a jexpr -- will be then converted to an array of nodes and
+      each appended as a child node (splicing).
+    - string, number -- will be the innerText of the tag
+  - an array of jexpr -- will be converted to an array of arraies of
+    nodes, aka of type =[ [ node ] ]=. and then be /flatten/ into an array
+    of nodes
