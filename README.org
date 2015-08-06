@@ -3,10 +3,27 @@
 * an html template engine?
 This is something equivalent to /Racket Xexpr/.
 
-Here is what we do in Racket
+=S-expression=, the syntax of Lisp-family language, is /isomorphic/ to
+XML/HTML. A static page could be written like this in Racket
 #+BEGIN_SRC scheme
   (require xml)
 
+  (xexpr->string
+   `(html
+     (head (title "the title"))
+     (body (h1 "heading 1")
+           (p ((id "p1")
+               (style "color: blue;")
+               ;; This list does not start with a tag. This syntax is
+               ;; dedicated to xml properties.
+               )
+              "the quick brown fox jumps over the lazy dog"))))
+
+  ;; Then write the string to .html file or send as an http response.
+#+END_SRC
+
+We can build some dynamic thing
+#+BEGIN_SRC scheme
   ;; a list of pairs
   ;; Symbol '`' turns next thing into value. Here `(...) is a list literal.
   (define data
@@ -17,8 +34,6 @@ Here is what we do in Racket
     (lambda (data)
       `(ul ((id "ul1")
             (style "color: blue;")
-            ;; This list does not start with a tag. This syntax is
-            ;; dedicated to xml properties.
             )
            ;; Symbol ',' turns next thing back to code.
            ;; While symbol ',@' expects the code evaluate to a list and
@@ -31,7 +46,6 @@ Here is what we do in Racket
   (make-ul data)
 
   (xexpr->string (make-ul data))
-  ;; Then write to .html file or send as a http response.
 #+END_SRC
 
 And in JS, that could be
@@ -61,7 +75,8 @@ var jexpr = mk_jexpr(true);
 var node = jexpr.to_dom_node(make_ul(data))[0];
 document.getElementsByTagName('body')[0].appendChild(node);
 #+END_SRC
-that is, add some quotation marks and commas.
+that is, we use JS array as Lisp list, adding some quotation marks and
+commas.
 
 In summary
 - =jexpr.to_dom_node()= convert a jexpr to an array of DOM nodes
