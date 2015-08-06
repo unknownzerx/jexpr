@@ -1,5 +1,5 @@
 // prevent_script = true will prevent from creating scipt tag
-// (by replacing it with a 'p' tag currently)
+// (by replacing it with a 'script_banned' tag currently)
 var mk_jexpr = function(prevent_script) {
     var m = {};
 

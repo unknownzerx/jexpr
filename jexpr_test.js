@@ -1,18 +1,4 @@
 var jexpr = mk_jexpr(true);
-var jexpr2 =
-    ['html',
-        ['head',
-            ['title', 'hello']
-        ],
-        ['body',
-            ['p',
-                {
-                    id: 'some-p',
-                    style: 'font-size: 12px;'
-                },
-                'world'],
-            ['p', 'or hello word']]
-    ];
 
 var jexpr3 =
     ['ul', {
