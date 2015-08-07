@@ -1,31 +1,29 @@
 #+OPTIONS: toc:nil
 
-* an html template engine?
+* an html template engine
 This is something equivalent to /Racket Xexpr/.
 
 =S-expression=, the syntax of Lisp-family language, is /isomorphic/ to
 XML/HTML. A static page could be written like this in Racket
 #+BEGIN_SRC scheme
-  (require xml)
-
-  (xexpr->string
-   `(html
-     (head (title "the title"))
-     (body (h1 "heading 1")
-           (p ((id "p1")
-               (style "color: blue;")
-               ;; This list does not start with a tag. This syntax is
-               ;; dedicated to xml properties.
-               )
-              "the quick brown fox jumps over the lazy dog"))))
-
-  ;; Then write the string to .html file or send as an http response.
+  ;; Symbol '`' turns next thing into value. Here `(...) is a list
+  ;; literal.
+  `(html
+    (head (title "the title"))
+    (body (h1 "heading 1")
+          (p ((id "p1")
+              (style "color: blue;"))
+           "the quick brown fox jumps over the lazy dog")))
 #+END_SRC
+- we use =(tag children..)= instead of =<tag>children..</tag>=
+- we use the special syntax =((prop val) ...)= to denote properties
+
+IMO it is easier to read and write (with some editor features like
+matched parenthesis highlight).
 
 We can build some dynamic thing
 #+BEGIN_SRC scheme
   ;; a list of pairs
-  ;; Symbol '`' turns next thing into value. Here `(...) is a list literal.
   (define data
     `((1 . "hello")
       (2 . "world")))
@@ -33,10 +31,9 @@ We can build some dynamic thing
   (define make-ul
     (lambda (data)
       `(ul ((id "ul1")
-            (style "color: blue;")
-            )
+            (style "color: blue;"))
            ;; Symbol ',' turns next thing back to code.
-           ;; While symbol ',@' expects the code evaluate to a list and
+           ;; While symbol ',@' expects the code evaluated to a list and
            ;; 'splicing' it.
            ,@(map (lambda (item)
                     `(li ,(format "~a ~a" (car item) (cdr item))))
@@ -50,43 +47,52 @@ We can build some dynamic thing
 
 And in JS, that could be
 #+BEGIN_SRC js
-var data = [{
-    id: 1,
-    info: 'hello'
-}, {
-    id: 2,
-    info: 'world'
-}];
+  var data = [{
+      id: 1,
+      info: 'hello'
+  }, {
+      id: 2,
+      info: 'world'
+  }];
 
-var make_ul = function(data) {
-    return [
-        'ul', {
-            id: 'ul1',
-            style: 'color: red;'
-        }, data.map(function(x) {
-            return ['li', '' + x.id + ' ' + x.info];
-        })
-        // jexpr.to_dom_node will do splicing for us
-    ];
-};
+  var make_ul = function(data) {
+      return [
+          'ul', {
+              id: 'ul1',
+              style: 'color: red;'
+          }, data.map(function(x) {
+              return ['li', '' + x.id + ' ' + x.info];
+          }) // jexpr.to_dom_node will do splicing for us
+      ];
+  };
 
-// settings arg prevent_scipt = true
-var jexpr = mk_jexpr(true);
-var node = jexpr.to_dom_node(make_ul(data))[0];
-document.getElementsByTagName('body')[0].appendChild(node);
+  // settings arg prevent_scipt = true
+  var jexpr = mk_jexpr(true);
+  var node = jexpr.to_dom_node(make_ul(data))[0];
+  document.getElementsByTagName('body')[0].appendChild(node);
 #+END_SRC
-that is, we use JS array as Lisp list, adding some quotation marks and
-commas.
+that is, we use JS array in place of Lisp list, adding some quotation
+marks and commas due to their syntax/feature difference.
 
-In summary
-- =jexpr.to_dom_node()= convert a jexpr to an array of DOM nodes
-- a jexpr could be
-  - an array =a=, where =a[0]= is the string of a html tag. remaining
-    array elements could be
-    - an ={...}=, which specifies the property of the tag
+This is still structuralized and readable/writeable, but far more
+simple than any html-syntax based template. And it integrates good
+with JS world.
+
+** summary
+- =jexpr.to_dom_node()= convert a jexpr to an array of DOM nodes.
+  - generally you just need the first item
+    =jexpr.to_dom_node(a_jexpr)[0]=
+- jexpr in BNF
+  #+BEGIN_SRC
+  jexpr = ["tag", {prop1: val1, ..}, jexpr, jexpr]
+        | [jexpr, jexpr, ..]
+  #+END_SRC
+  1. an array =a= where =a[0]= is the string of a html tag. a
+     remaining array element could be
+    - an optional ={..}=, which specifies the properties of the tag
     - a jexpr -- will be then converted to an array of nodes and
-      each appended as a child node (splicing).
+      each appended as a child node (for splicing).
     - string, number -- will be the innerText of the tag
-  - an array of jexpr -- will be converted to an array of arraies of
-    nodes, aka of type =[ [ node ] ]=. and then be /flatten/ into an array
-    of nodes
+  2. an array of jexpr -- will be converted to an array of arraies of
+     nodes, aka of type =[ [ node ] ]=. and then be /flatten/ into an array
+     of nodes (for splicing)
