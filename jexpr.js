@@ -38,7 +38,7 @@ var mk_jexpr = function(prevent_script) {
                         }
                     }
                 } else {
-                    r.innerText = x.toString();
+                    r.appendChild(document.createTextNode(x.toString()));
                 }
             }
 
